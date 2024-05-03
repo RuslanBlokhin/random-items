@@ -49,7 +49,7 @@ export const vChangeNumber: Directive<HTMLElement> = {
           const rundomElemId = Math.floor(Math.random() * elemCount)
 
           const elemChildrenArr = Array.from(el.children)
-          const currElem = elemChildrenArr.find((item, index) => rundomElemId === index)
+          const currElem = elemChildrenArr.find((_item, index) => rundomElemId === index)
           console.log('Смена элементов')
 
           if (currElem) currElem.textContent = String(getRandomArbitrary(100, 200))
