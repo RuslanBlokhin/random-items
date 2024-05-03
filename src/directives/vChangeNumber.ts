@@ -1,24 +1,41 @@
 import type { Directive } from 'vue'
 import { getRandomArbitrary } from '../helpers/randomNumbers'
 
+const throttle = (callee: Function, timeout: number) => {
+  let timer: number
+  return function perform(...args: string[]) {
+    if (timer) return
+    timer = setTimeout(() => {
+      callee(...args)
+      clearTimeout(timer)
+      timer = 0
+    }, timeout)
+  }
+}
+
+let intervalIds: Array<number> = []
+
+window.addEventListener('scroll', function () {
+  intervalIds.forEach(id => {
+    clearInterval(id)
+  })
+  intervalIds = []
+})
+
 export const vChangeNumber: Directive<HTMLElement> = {
   mounted(el) {
-    let intervalIds: Array<number> = []
-
-    var Visible = function (target: HTMLElement) {
-      // Все позиции элемента
-      var targetPosition = {
-          top: window.pageYOffset + target.getBoundingClientRect().top,
-          left: window.pageXOffset + target.getBoundingClientRect().left,
-          right: window.pageXOffset + target.getBoundingClientRect().right,
-          bottom: window.pageYOffset + target.getBoundingClientRect().bottom,
+    const visible = () => {
+      let targetPosition = {
+          top: window.scrollY + el.getBoundingClientRect().top,
+          left: window.scrollX + el.getBoundingClientRect().left,
+          right: window.scrollX + el.getBoundingClientRect().right,
+          bottom: window.scrollY + el.getBoundingClientRect().bottom,
         },
-        // Получаем позиции окна
         windowPosition = {
-          top: window.pageYOffset,
-          left: window.pageXOffset,
-          right: window.pageXOffset + document.documentElement.clientWidth,
-          bottom: window.pageYOffset + document.documentElement.clientHeight,
+          top: window.scrollY,
+          left: window.scrollX,
+          right: window.scrollX + document.documentElement.clientWidth,
+          bottom: window.scrollY + document.documentElement.clientHeight,
         }
 
       if (
@@ -27,37 +44,32 @@ export const vChangeNumber: Directive<HTMLElement> = {
         targetPosition.right > windowPosition.left && // Если позиция правой стороны элемента больше позиции левой части окна, то элемент виден слева
         targetPosition.left < windowPosition.right
       ) {
-        // Если позиция левой стороны элемента меньше позиции правой чайти окна, то элемент виден справа
-        // Если элемент полностью видно, то запускаем следующий код
-        console.clear()
-        console.log('Вы видите элемент :)')
-
         const intervalId = setInterval(() => {
           const elemCount = el.childElementCount
           const rundomElemId = Math.floor(Math.random() * elemCount)
 
           const elemChildrenArr = Array.from(el.children)
           const currElem = elemChildrenArr.find((item, index) => rundomElemId === index)
-          console.log('Вы видите элемент :)')
+          console.log('Смена элементов')
 
           if (currElem) currElem.textContent = String(getRandomArbitrary(100, 200))
         }, 1000)
-        intervalIds.push(intervalId)
+        if (intervalId) intervalIds.push(intervalId)
       } else {
-        // Если элемент не видно, то запускаем этот код
-        console.clear()
-        intervalIds.forEach(id => {
-          clearInterval(id)
-        })
+        console.log('Элементов скрыто 👀')
       }
     }
 
-    // Запускаем функцию при прокрутке страницы
+    function fn() {
+      return visible
+    }
+
+    const throttleVisible = throttle(fn(), 1000)
+
     window.addEventListener('scroll', function () {
-      Visible(el)
+      throttleVisible()
     })
 
-    // А также запустим функцию сразу. А то вдруг, элемент изначально видно
-    Visible(el)
+    visible()
   },
 }
